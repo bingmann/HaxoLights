@@ -32,9 +32,10 @@ DMXESPSerial dmx;
 
 std::vector<Lamp> lamps;
 
-static const size_t num_lamp_parts = 4 * 18;
+static const size_t num_lamp_parts = 4 * 6; //18;
 
 bool flash = false;
+size_t color_wheel_status = 0;
 
 //********************************************************************//
 //                                                                    //
@@ -47,11 +48,20 @@ void setup() {
     dmx.init(512);            // initialization for complete bus
     delay(200);               // wait a while (not necessary)
 
+    /*
     lamps.reserve(18);
     lamps.push_back(Lamp(1)); // DMX Address space starts at one
     for (size_t i = 1; i < 18; ++i) {
         lamps.push_back(Lamp(20 * i));
     }
+    */
+    lamps.reserve(8);
+    lamps.push_back(Lamp({121, 1, 241}));
+    lamps.push_back(Lamp({141, 21, 261}));
+    lamps.push_back(Lamp({161, 41, 281}));
+    lamps.push_back(Lamp({181, 61, 301}));
+    lamps.push_back(Lamp({201, 81, 321}));
+    lamps.push_back(Lamp({221, 101, 341}));
 }
 
 
@@ -123,6 +133,22 @@ void LoadingBar(Color c1, Color c2, bool direction_right, size_t duration) {
         }
         dmx.update();                         // update the DMX bus
     }
+}
+
+size_t ColorWheelLoadingBar(size_t start_value, bool direction_right, size_t duration) {
+    Color c1 = WheelColor(start_value, 255);
+    for (size_t i = 0; i < num_lamp_parts; ++i) {
+        c1 = WheelColor(start_value + i, 255);
+        delay(duration/num_lamp_parts); // We want to iterate over every known lamp.
+        if(direction_right) {
+            set_lamp_part(i, c1);
+        }
+        else {
+            set_lamp_part(num_lamp_parts - i, c1); // Go reverse
+        }
+        dmx.update();                         // update the DMX bus
+    }
+    return (start_value + num_lamp_parts % 255);
 }
 
 void ToggleFlash(size_t speed) {
@@ -208,16 +234,16 @@ void loop() {
 
     // Serial.println("SparkleRGB");
     // SparkleRGB();
-    
+    /*
     Serial.println("Loading Bar 1");
-    LoadingBar(Color(0, 0, 255), Color(255, 0, 0), true, 5000);
+    LoadingBar(Color(0, 0, 255), Color(255, 0, 0), true, 1000);
     Serial.println("Loading Bar 2");
-    LoadingBar(Color(0, 255, 0), Color(0, 0, 255), false, 5000);
+    LoadingBar(Color(0, 255, 0), Color(0, 0, 255), false, 1000);
     Serial.println("Loading Bar 3");
-    LoadingBar(Color(255, 0, 0), Color(0, 255, 0), true, 5000);
+    LoadingBar(Color(255, 0, 0), Color(0, 255, 0), true, 1000);
     Serial.println("Loading Bar 4");
     Serial.println("Restarting");
-    lamps_clear_color(Color(255, 255, 255));
-    ToggleFlash(2);
-    delay(300);
+    */
+    color_wheel_status = ColorWheelLoadingBar(color_wheel_status, true, 1000);
+    color_wheel_status = ColorWheelLoadingBar(color_wheel_status, false, 1000);
 }

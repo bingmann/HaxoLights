@@ -41,10 +41,18 @@ public:
     // RGBA colors
     void set_part(size_t p, size_t r, size_t g, size_t b, size_t a) {
         for (int i = 0; i < addrs_.size(); ++i) {
-            dmx.write(addrs_[i] + 3 + 4 * p + 0, r);
-            dmx.write(addrs_[i] + 3 + 4 * p + 1, g);
-            dmx.write(addrs_[i] + 3 + 4 * p + 2, b);
-            dmx.write(addrs_[i] + 3 + 4 * p + 3, a);
+            if(i % 2 == 0) {
+                dmx.write(addrs_[i] + 3 + 4 * p + 0, r);
+                dmx.write(addrs_[i] + 3 + 4 * p + 1, g);
+                dmx.write(addrs_[i] + 3 + 4 * p + 2, b);
+                dmx.write(addrs_[i] + 3 + 4 * p + 3, a);
+            }
+            else {
+                dmx.write(addrs_[i] + 15 - 4 * p + 0, r);
+                dmx.write(addrs_[i] + 15 - 4 * p + 1, g);
+                dmx.write(addrs_[i] + 15 - 4 * p + 2, b);
+                dmx.write(addrs_[i] + 15 - 4 * p + 3, a);
+            }
         }
     }
 
