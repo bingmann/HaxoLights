@@ -11,99 +11,49 @@
 // Pin is defined in library
 // - - - - -
 
-//General include
+// General include
 #include <vector>
 
-//Special libraries
+// Special libraries
 #include <ESPDMX.h>
 
-//Split up source files
+// Split up source files
 #include "Color.ino"
 #include "Hue_Color.ino"
+#include "Wheel_Color.ino"
 
-
-// Input a value 0 to 255 to get a color value.
-// The colours are a transition r - g - b - back to r.
-static inline Color WheelColor(uint32_t i, uint8_t intensity) {
-    if (intensity == 0)
-        return Color(0);
-    i &= 255;
-    if (i < 85) {
-        return Color(
-            (256 - i * 3) * 255u / intensity, 0, (i * 3) * 255 / intensity);
-    }
-    if (i < 170) {
-        i -= 85;
-        return Color(
-            0, (i * 3) * 255u / intensity, (256 - i * 3) * 255u / intensity);
-    }
-    i -= 170;
-    return Color(
-        (i * 3) * 255u / intensity, (256 - i * 3) * 255u / intensity, 0);
-}
 
 DMXESPSerial dmx;
 
-class Lamp
-{
-public:
-    Lamp(size_t addr)
-        : addr_(addr)
-    {
-        dmx.write(addr_ + 0, 11);
-        dmx.write(addr_ + 1, 255);
-        dmx.write(addr_ + 2, 0);
-    }
+#include "Lamp.ino"
 
-    void dimm(size_t v) {
-        dmx.write(addr_ + 1, v);
-    }
 
-    void flash(size_t v) {
-        dmx.write(addr_ + 2, v);
-    }
-
-    // all colors
-    void set(size_t v) {
-        for (size_t i = 0; i < 16; ++i) {
-            dmx.write(addr_ + 3 + i, v);
-        }
-    }
-
-    // RGBA colors
-    void set_part(size_t p, size_t r, size_t g, size_t b, size_t a) {
-        dmx.write(addr_ + 3 + 4 * p + 0, r);
-        dmx.write(addr_ + 3 + 4 * p + 1, g);
-        dmx.write(addr_ + 3 + 4 * p + 2, b);
-        dmx.write(addr_ + 3 + 4 * p + 3, a);
-    }
-
-    // RGBA colors
-    void set_part(size_t p, const Color& c) {
-        set_part(p, c.r, c.g, c.b, c.w);
-    }
-
-    // RGBA colors
-    void set(size_t r, size_t g, size_t b, size_t a) {
-        for (size_t i = 0; i < 4; ++i) {
-            set_part(i, r, g, b, a);
-        }
-    }
-
-    // RGBA colors
-    void set(const Color& c) {
-        set(c.r, c.g, c.b, c.w);
-    }
-
-    
-
-private:
-    size_t addr_;
-};
+// Global definitions
 
 std::vector<Lamp> lamps;
 
-static const size_t num_lamps = 4 * 18;
+static const size_t num_lamp_parts = 4 * 18;
+
+//********************************************************************//
+//                                                                    //
+//-------------------------------Setup--------------------------------//
+//                                                                    //
+//********************************************************************//
+
+void setup() {
+    Serial.begin(115200);
+    dmx.init(512);            // initialization for complete bus
+    delay(200);               // wait a while (not necessary)
+
+    lamps.reserve(18);
+    lamps.push_back(Lamp(1)); // DMX Address space starts at one
+    for (size_t i = 1; i < 18; ++i) {
+        lamps.push_back(Lamp(20 * i));
+    }
+}
+
+
+// Helper functions
 
 void lamps_clear()
 {
@@ -119,24 +69,14 @@ void lamps_clear_color(Color c)
     }
 }
 
-void set_lamp(size_t i, const Color& c)
+void set_lamp_part(size_t i, const Color& c)
 {
     if (i >= 18 * 4)
         return;
     lamps[i / 4].set_part(i % 4, c);
 }
 
-void setup() {
-    Serial.begin(115200);
-    dmx.init(512);           // initialization for complete bus
-    delay(200);               // wait a while (not necessary)
-
-    lamps.reserve(18);
-    lamps.push_back(Lamp(1));
-    for (size_t i = 1; i < 18; ++i) {
-        lamps.push_back(Lamp(20 * i));
-    }
-}
+// Lamp effect functions
 
 void BGSnake() {
 
@@ -158,19 +98,14 @@ void BGSnake() {
 }
 
 void LoadingBar(Color c1, Color c2, bool direction_right, size_t duration) {
-    lamps_clear_color(c2);
-    for (size_t i = 0; i < num_lamps; ++i) {
-        Serial.print("Waiting ");
-        Serial.print(duration/num_lamps);
-        Serial.print(" milliseconds at iteration ");
-        Serial.print(i);
-        Serial.println("...");
-        delay(duration/num_lamps);
+    lamps_clear_color(c2); // We want to start from a clean background
+    for (size_t i = 0; i < num_lamp_parts; ++i) {
+        delay(duration/num_lamp_parts); // We want to iterate over every known lamp.
         if(direction_right) {
-            set_lamp(i, c1);
+            set_lamp_part(i, c1);
         }
         else {
-            set_lamp(num_lamps - i, c1);
+            set_lamp_part(num_lamp_parts - i, c1); // Go reverse
         }
         dmx.update();                         // update the DMX bus
     }
@@ -186,12 +121,12 @@ void KnightRider() {
     for (size_t j = 0; j < 10; ++j) {
         lamps_clear_color(c2);
 
-        for (size_t i = 0; i < num_lamps; ++i) {
+        for (size_t i = 0; i < num_lamp_parts; ++i) {
             if(direction_right) {
-                set_lamp(i, c1);
+                set_lamp_part(i, c1);
             }
             else {
-                set_lamp(num_lamps - i, c1);
+                set_lamp_part(num_lamp_parts - i, c1);
             }
             dmx.update();          // update the DMX bus
             delay(250);            // wait for 0.25s
@@ -218,13 +153,13 @@ void SparkleRGB() {
 
     for (size_t t = 0; t < 20 * 10; ++t) {
         for (size_t i = 0; i < pix; ++i) {
-            set_lamp(rng1() % num_lamps, WheelColor(rng3(), intensity));
+            set_lamp_part(rng1() % num_lamp_parts, WheelColor(rng3(), intensity));
         }
         dmx.update();
         delay(25);
 
         for (size_t i = 0; i < pix; ++i) {
-            set_lamp(rng2() % num_lamps, 0);
+            set_lamp_part(rng2() % num_lamp_parts, 0);
         }
         dmx.update();
         delay(25);
@@ -233,6 +168,12 @@ void SparkleRGB() {
             ++pix;
     }
 }
+
+//********************************************************************//
+//                                                                    //
+//-----------------------------Main loop------------------------------//
+//                                                                    //
+//********************************************************************//
 
 void loop() {
     // Serial.println("BGSnake");
