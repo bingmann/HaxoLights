@@ -183,10 +183,11 @@ void loop() {
     // SparkleRGB();
     
     Serial.println("Loading Bar 1");
-    LoadingBar(Color(0, 0, 255), Color(0, 0, 0), true, 5000);
+    LoadingBar(Color(0, 0, 255), Color(255, 0, 0), true, 5000);
     Serial.println("Loading Bar 2");
     LoadingBar(Color(0, 255, 0), Color(0, 0, 255), false, 5000);
     Serial.println("Loading Bar 3");
     LoadingBar(Color(255, 0, 0), Color(0, 255, 0), true, 5000);
+    Serial.println("Loading Bar 4");
     Serial.println("Restarting");
 }
