@@ -30,7 +30,9 @@ DMXESPSerial dmx;
 
 // Global variables and consts
 
-std::vector<Lamp> lamps;
+// std::vector<Lamp> lamps;
+
+Lamp lamps[6] = {Lamp({121, 1, 241}), Lamp({141, 21, 261}), Lamp({161, 41, 281}), Lamp({181, 61, 301}), Lamp({201, 81, 321}), Lamp({221, 101, 341})}; //I think this has to be hardcoded :(
 
 static const size_t num_lamp_parts = 4 * 6; //18;
 
@@ -55,13 +57,6 @@ void setup() {
         lamps.push_back(Lamp(20 * i));
     }
     */
-    lamps.reserve(8);
-    lamps.push_back(Lamp({121, 1, 241}));
-    lamps.push_back(Lamp({141, 21, 261}));
-    lamps.push_back(Lamp({161, 41, 281}));
-    lamps.push_back(Lamp({181, 61, 301}));
-    lamps.push_back(Lamp({201, 81, 321}));
-    lamps.push_back(Lamp({221, 101, 341}));
 }
 
 
@@ -69,14 +64,14 @@ void setup() {
 
 void lamps_clear()
 {
-    for (size_t i = 0; i < lamps.size(); ++i) {
+    for (size_t i = 0; i < sizeof(lamps); ++i) {
         lamps[i].set(0);
     }
 }
 
 void lamps_clear_color(Color c)
 {
-    for (size_t i = 0; i < lamps.size(); ++i) {
+    for (size_t i = 0; i < sizeof(lamps); ++i) {
         lamps[i].set(c);
     }
 }
@@ -89,13 +84,13 @@ void set_lamp_part(size_t i, const Color& c)
 }
 
 void enable_flash(size_t speed) {
-    for (size_t i = 0; i < lamps.size(); ++i) {
+    for (size_t i = 0; i < sizeof(lamps); ++i) {
         lamps[i].flash(speed);
     }
 }
 
 void disable_flash() {
-    for (size_t i = 0; i < lamps.size(); ++i) {
+    for (size_t i = 0; i < sizeof(lamps); ++i) {
         lamps[i].flash(0);
     }
 }
@@ -153,7 +148,7 @@ size_t ColorWheelLoadingBar(size_t start_value, bool direction_right, size_t dur
 
 void ToggleFlash(size_t speed) {
     flash = !flash;
-    for (size_t i = 0; i < lamps.size(); ++i) {
+    for (size_t i = 0; i < sizeof(lamps); ++i) {
         if(flash) {
             enable_flash(speed);
         }
