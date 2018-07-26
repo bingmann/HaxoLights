@@ -60,7 +60,7 @@ public:
     }
 
     void flash(size_t v) {
-
+        dmx.write(addr_ + 2, v);
     }
 
     // all colors
