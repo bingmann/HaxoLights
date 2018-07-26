@@ -238,7 +238,7 @@ private:
 
 std::vector<Lamp> lamps;
 
-size_t num_lamps = 4 * 18;
+static const size_t num_lamps = 4 * 18;
 
 void lamps_clear()
 {
@@ -271,7 +271,7 @@ void BGSnake() {
     Color c1 = Color(0, 255, 0);
     Color c2 = Color(0, 0, 255);
 
-    for (size_t t = 0; t < 512; ++t) {
+    for (size_t t = 0; t < 4 * 10; ++t) {
         for (size_t j = 0; j < 4; ++j) {
             for (size_t i = 0; i < 18; ++i) {
                 lamps[i].set_part(0, j == 0 ? c1 : c2);
@@ -300,7 +300,7 @@ void SparkleRGB() {
     std::default_random_engine rng2(seed);
     std::default_random_engine rng3(seed);
 
-    for (size_t t = 0; t < 512; ++t) {
+    for (size_t t = 0; t < 20 * 10; ++t) {
         for (size_t i = 0; i < pix; ++i) {
             set_lamp(rng1() % num_lamps, WheelColor(rng3(), intensity));
         }
@@ -319,5 +319,9 @@ void SparkleRGB() {
 }
 
 void loop() {
+    Serial.println("BGSnake");
+    BGSnake();
+
+    Serial.println("SparkleRGB");
     SparkleRGB();
 }
