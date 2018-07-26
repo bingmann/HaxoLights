@@ -247,6 +247,13 @@ void lamps_clear()
     }
 }
 
+void lamps_clear_color(Color c)
+{
+    for (size_t i = 0; i < lamps.size(); ++i) {
+        lamps[i].set(c);
+    }
+}
+
 void set_lamp(size_t i, const Color& c)
 {
     if (i >= 18 * 4)
@@ -285,6 +292,50 @@ void BGSnake() {
     }
 }
 
+void LoadingBar(Color c1, Color c2, bool direction_right, size_t duration) {
+    lamps_clear_color(c2);
+    for (size_t i = 0; i < num_lamps; ++i) {
+        Serial.print("Waiting ");
+        Serial.print(duration/num_lamps);
+        Serial.print(" milliseconds at iteration ");
+        Serial.print(i);
+        Serial.println("...");
+        delay(duration/num_lamps);
+        if(direction_right) {
+            set_lamp(i, c1);
+        }
+        else {
+            set_lamp(num_lamps - i, c1);
+        }
+        dmx.update();                         // update the DMX bus
+    }
+}
+
+/*
+void KnightRider() {
+
+    Color c1 = Color(255, 0, 0);
+    Color c2 = Color(0, 0, 255);
+    bool direction_right = true;
+    
+    for (size_t j = 0; j < 10; ++j) {
+        lamps_clear_color(c2);
+
+        for (size_t i = 0; i < num_lamps; ++i) {
+            if(direction_right) {
+                set_lamp(i, c1);
+            }
+            else {
+                set_lamp(num_lamps - i, c1);
+            }
+            dmx.update();          // update the DMX bus
+            delay(250);            // wait for 0.25s
+            Serial.println("Switched Light");
+        }
+        direction_right = !direction_right;
+    }
+}
+*/
 
 void SparkleRGB() {
 
@@ -319,9 +370,17 @@ void SparkleRGB() {
 }
 
 void loop() {
-    Serial.println("BGSnake");
-    BGSnake();
+    // Serial.println("BGSnake");
+    // BGSnake();
 
-    Serial.println("SparkleRGB");
-    SparkleRGB();
+    // Serial.println("SparkleRGB");
+    // SparkleRGB();
+    
+    Serial.println("Loading Bar 1");
+    LoadingBar(Color(0, 0, 255), Color(0, 0, 0), true, 5000);
+    Serial.println("Loading Bar 2");
+    LoadingBar(Color(0, 255, 0), Color(0, 0, 255), false, 5000);
+    Serial.println("Loading Bar 3");
+    LoadingBar(Color(255, 0, 0), Color(0, 255, 0), true, 5000);
+    Serial.println("Restarting");
 }
