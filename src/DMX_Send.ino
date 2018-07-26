@@ -25,7 +25,7 @@
 
 DMXESPSerial dmx;
 
-#include "Lamp.ino"
+#include "Lamp_Multiple.ino"
 
 
 // Global definitions
