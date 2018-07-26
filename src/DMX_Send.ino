@@ -28,11 +28,13 @@ DMXESPSerial dmx;
 #include "Lamp_Multiple.ino"
 
 
-// Global definitions
+// Global variables and consts
 
 std::vector<Lamp> lamps;
 
 static const size_t num_lamp_parts = 4 * 18;
+
+bool flash = false;
 
 //********************************************************************//
 //                                                                    //
@@ -76,6 +78,18 @@ void set_lamp_part(size_t i, const Color& c)
     lamps[i / 4].set_part(i % 4, c);
 }
 
+void enable_flash(size_t speed) {
+    for (size_t i = 0; i < lamps.size(); ++i) {
+        lamps[i].flash(speed);
+    }
+}
+
+void disable_flash() {
+    for (size_t i = 0; i < lamps.size(); ++i) {
+        lamps[i].flash(0);
+    }
+}
+
 // Lamp effect functions
 
 void BGSnake() {
@@ -109,6 +123,19 @@ void LoadingBar(Color c1, Color c2, bool direction_right, size_t duration) {
         }
         dmx.update();                         // update the DMX bus
     }
+}
+
+void ToggleFlash(size_t speed) {
+    flash = !flash;
+    for (size_t i = 0; i < lamps.size(); ++i) {
+        if(flash) {
+            enable_flash(speed);
+        }
+        else {
+            disable_flash();
+        }
+    }
+    dmx.update();
 }
 
 /*
@@ -190,4 +217,7 @@ void loop() {
     LoadingBar(Color(255, 0, 0), Color(0, 255, 0), true, 5000);
     Serial.println("Loading Bar 4");
     Serial.println("Restarting");
+    lamps_clear_color(Color(255, 255, 255));
+    ToggleFlash(2);
+    delay(300);
 }
