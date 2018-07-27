@@ -32,9 +32,10 @@ DMXESPSerial dmx;
 
 // std::vector<Lamp> lamps;
 
-Lamp lamps[6] = {Lamp({121, 1, 241}), Lamp({141, 21, 261}), Lamp({161, 41, 281}), Lamp({181, 61, 301}), Lamp({201, 81, 321}), Lamp({221, 101, 341})}; //I think this has to be hardcoded :(
+#define LAMPS_LENGTH 6
+static Lamp lamps[LAMPS_LENGTH] = {Lamp({121, 1, 241}), Lamp({141, 21, 261}), Lamp({161, 41, 281}), Lamp({181, 61, 301}), Lamp({201, 81, 321}), Lamp({221, 101, 341})}; //I think this has to be hardcoded :(
 
-static const size_t num_lamp_parts = 4 * 6; //18;
+static const size_t num_lamp_parts = 4 * LAMPS_LENGTH; //18;
 
 bool flash = false;
 size_t color_wheel_status = 0;
@@ -57,6 +58,9 @@ void setup() {
         lamps.push_back(Lamp(20 * i));
     }
     */
+    for (size_t i = 1; i < LAMPS_LENGTH; ++i) {
+        lamps[i].init_parts();
+    }
 }
 
 
@@ -64,33 +68,38 @@ void setup() {
 
 void lamps_clear()
 {
-    for (size_t i = 0; i < sizeof(lamps); ++i) {
+    for (size_t i = 0; i < LAMPS_LENGTH; ++i) {
         lamps[i].set(0);
     }
 }
 
 void lamps_clear_color(Color c)
 {
-    for (size_t i = 0; i < sizeof(lamps); ++i) {
+    for (size_t i = 0; i < LAMPS_LENGTH; ++i) {
+        // Serial.print("Setting lamp ");
+        // Serial.println(i);
+        // Serial.print("Size of lamps: ");
+        // Serial.println(LAMPS_LENGTH);
         lamps[i].set(c);
+        // dmx.update(); /////////////////////////////////////temporarily
     }
 }
 
 void set_lamp_part(size_t i, const Color& c)
 {
-    if (i >= 18 * 4)
+    if (i >= num_lamp_parts)
         return;
     lamps[i / 4].set_part(i % 4, c);
 }
 
 void enable_flash(size_t speed) {
-    for (size_t i = 0; i < sizeof(lamps); ++i) {
+    for (size_t i = 0; i < LAMPS_LENGTH; ++i) {
         lamps[i].flash(speed);
     }
 }
 
 void disable_flash() {
-    for (size_t i = 0; i < sizeof(lamps); ++i) {
+    for (size_t i = 0; i < LAMPS_LENGTH; ++i) {
         lamps[i].flash(0);
     }
 }
@@ -104,7 +113,7 @@ void BGSnake() {
 
     for (size_t t = 0; t < 4 * 10; ++t) {
         for (size_t j = 0; j < 4; ++j) {
-            for (size_t i = 0; i < 18; ++i) {
+            for (size_t i = 0; i < num_lamp_parts; ++i) {
                 lamps[i].set_part(0, j == 0 ? c1 : c2);
                 lamps[i].set_part(1, j == 1 ? c1 : c2);
                 lamps[i].set_part(2, j == 2 ? c1 : c2);
@@ -148,7 +157,7 @@ size_t ColorWheelLoadingBar(size_t start_value, bool direction_right, size_t dur
 
 void ToggleFlash(size_t speed) {
     flash = !flash;
-    for (size_t i = 0; i < sizeof(lamps); ++i) {
+    for (size_t i = 0; i < LAMPS_LENGTH; ++i) {
         if(flash) {
             enable_flash(speed);
         }
@@ -159,31 +168,33 @@ void ToggleFlash(size_t speed) {
     dmx.update();
 }
 
-/*
-void KnightRider() {
 
+void KnightRider(bool direction_right, size_t duration) {
     Color c1 = Color(255, 0, 0);
-    Color c2 = Color(0, 0, 255);
-    bool direction_right = true;
-    
-    for (size_t j = 0; j < 10; ++j) {
+    Color c2 = Color(0, 0, 0);
+    size_t tail_length = 4;
+    size_t tail_decrease = 60;      
+    for (size_t i = 0; i < num_lamp_parts; ++i) {
         lamps_clear_color(c2);
-
-        for (size_t i = 0; i < num_lamp_parts; ++i) {
-            if(direction_right) {
-                set_lamp_part(i, c1);
-            }
-            else {
-                set_lamp_part(num_lamp_parts - i, c1);
-            }
-            dmx.update();          // update the DMX bus
-            delay(250);            // wait for 0.25s
-            Serial.println("Switched Light");
+        if(direction_right) {
+            set_lamp_part(i, c1);
         }
-        direction_right = !direction_right;
+        else {
+            set_lamp_part(num_lamp_parts - i, c1);
+        }
+        for (size_t j = 1; j <= tail_length; j++) {
+            if(direction_right && i - j > 0) {
+                set_lamp_part(i - j, software_dim(c1, 255 - i * tail_decrease ));
+            }
+            if (!direction_right && i + j <= num_lamp_parts) {
+                set_lamp_part((num_lamp_parts - i) + j, software_dim(c1, 255 - i * tail_decrease ));
+            }
+        }
+         dmx.update();          // update the DMX bus
+        delay(duration / num_lamp_parts);
     }
 }
-*/
+
 
 void SparkleRGB() {
 
@@ -191,7 +202,7 @@ void SparkleRGB() {
 
     unsigned intensity = 255;
 
-    size_t pix = 4;
+    size_t pix = 12;
 
     uint32_t seed = random(10000000);
 
@@ -224,11 +235,15 @@ void SparkleRGB() {
 //********************************************************************//
 
 void loop() {
+    for(size_t i = 0; i<=5; i++) {
+        KnightRider(true, 2000);
+        KnightRider(false, 2000);
+    }
     // Serial.println("BGSnake");
-    // BGSnake();
+    //BGSnake();
 
     // Serial.println("SparkleRGB");
-    // SparkleRGB();
+    //SparkleRGB();
     /*
     Serial.println("Loading Bar 1");
     LoadingBar(Color(0, 0, 255), Color(255, 0, 0), true, 1000);
@@ -239,6 +254,13 @@ void loop() {
     Serial.println("Loading Bar 4");
     Serial.println("Restarting");
     */
-    color_wheel_status = ColorWheelLoadingBar(color_wheel_status, true, 1000);
-    color_wheel_status = ColorWheelLoadingBar(color_wheel_status, false, 1000);
+    for(size_t i = 0; i<=8; i++) {
+        color_wheel_status = ColorWheelLoadingBar(color_wheel_status, true, 1000);
+        color_wheel_status = ColorWheelLoadingBar(color_wheel_status, false, 1000);
+    }
+    //lamps[1].set(Color(255, 255, 255));
+    //lamps_clear_color(Color(255, 255, 255));
+    //delay(20);
+    //dmx.update();
+    //delay(1000);
 }

@@ -29,6 +29,12 @@ public:
         }
     }
 
+    void init_parts() {
+        for (int i = 0; i < addrs_.size(); ++i) {
+            init_lamp(addrs_[i]);
+        }
+    }
+
     // all colors
     void set(size_t v) {
         for (int i = 0; i < addrs_.size(); ++i) {
@@ -40,12 +46,20 @@ public:
 
     // RGBA colors
     void set_part(size_t p, size_t r, size_t g, size_t b, size_t a) {
-        for (int i = 0; i < addrs_.size(); ++i) {
+        //Serial.println("New part");
+        for (int i = 0; i < addrs_.size(); i++) {
+            //Serial.print("For lamp ");
+            //Serial.println(addrs_[i]);
             if(i % 2 == 0) {
+                //Serial.println("Setting addresses!");
                 dmx.write(addrs_[i] + 3 + 4 * p + 0, r);
+                //Serial.println(addrs_[i] + 3 + 4 * p + 0);
                 dmx.write(addrs_[i] + 3 + 4 * p + 1, g);
+                //Serial.println(addrs_[i] + 3 + 4 * p + 1);
                 dmx.write(addrs_[i] + 3 + 4 * p + 2, b);
+                //Serial.println(addrs_[i] + 3 + 4 * p + 2);
                 dmx.write(addrs_[i] + 3 + 4 * p + 3, a);
+                //Serial.println(addrs_[i] + 3 + 4 * p + 3);
             }
             else {
                 dmx.write(addrs_[i] + 15 - 4 * p + 0, r);

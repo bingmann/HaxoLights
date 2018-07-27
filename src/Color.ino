@@ -27,4 +27,8 @@ struct Color {
         : w(w), b(b), g(g), r(r) {}
 };
 
+Color software_dim(Color& c1, size_t intensity) {
+    return Color(c1.r * intensity / 255.0, c1.g * intensity / 255.0, c1.b * intensity / 255.0);
+}
+
 #endif
