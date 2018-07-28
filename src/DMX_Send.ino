@@ -91,6 +91,13 @@ void lamps_clear()
     lamps_clear(Color(0, 0, 0));
 }
 
+void lamps_dimm(size_t value)
+{
+    for (size_t i = 0; i < LAMPS_LENGTH; ++i) {
+        lamps[i].dimm(value);
+    }
+}
+
 void set_lamp_part(size_t i, const Color& c)
 {
     if (i >= num_lamp_parts)
@@ -250,12 +257,13 @@ void loop() {
                 incomingString += incomingChar;
             }
             else if (incomingChar == 'l') {
-                if(locked == 0) {
+                if(locked == 0 || incomingString != "") {
                     if(incomingString == "") {
                         locked = 1;
                     }
                     else {
                         locked = (size_t) incomingString.toInt();
+                        incomingString = "";
                     }
                     locked_at = global_status;
                     Serial.println("\nLocked!");
@@ -268,6 +276,16 @@ void loop() {
             else if (incomingChar == '\b') {
                 incomingString = "";
                 Serial.println("Clear!");
+            }
+            else if (incomingChar == 'd') {
+                if(incomingString == "") {
+                    Serial.println("Valid values range from 0-255");
+                    lamps_dimm(255);
+                }
+                else {
+                    lamps_dimm((size_t) incomingString.toInt());
+                    incomingString = "";
+                }
             }
         }
         delay(1);
