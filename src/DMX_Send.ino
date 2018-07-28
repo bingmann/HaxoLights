@@ -37,14 +37,16 @@ static Lamp lamps[LAMPS_LENGTH] = {Lamp({121, 1, 241}), Lamp({141, 21, 261}), La
 
 static const size_t num_lamp_parts = 4 * LAMPS_LENGTH; //18;
 
-String inputString = "";
-
 size_t color_wheel_status = 0;
 
 size_t status = 0;
 size_t global_status = 0;
+size_t waiting = 100;
+size_t locked = 0;
+size_t locked_at = 0;
 static const size_t global_status_max = 5;
-
+char incomingChar;
+String incomingString = "";
 //********************************************************************//
 //                                                                    //
 //-------------------------------Setup--------------------------------//
@@ -53,7 +55,6 @@ static const size_t global_status_max = 5;
 
 void setup() {
     Serial.begin(115200);
-    inputString.reserve(200);
     dmx.init(512);            // initialization for complete bus
     delay(200);               // wait a while (not necessary)
 
@@ -73,14 +74,7 @@ void setup() {
 
 // Helper functions
 
-void lamps_clear()
-{
-    for (size_t i = 0; i < LAMPS_LENGTH; ++i) {
-        lamps[i].set(0);
-    }
-}
-
-void lamps_clear_color(Color c)
+void lamps_clear(Color c)
 {
     for (size_t i = 0; i < LAMPS_LENGTH; ++i) {
         // Serial.print("Setting lamp ");
@@ -90,6 +84,11 @@ void lamps_clear_color(Color c)
         lamps[i].set(c);
         // dmx.update(); /////////////////////////////////////temporarily
     }
+}
+
+void lamps_clear()
+{
+    lamps_clear(Color(0, 0, 0));
 }
 
 void set_lamp_part(size_t i, const Color& c)
@@ -122,7 +121,7 @@ void BGSnake() {
 }
 
 void LoadingBar(Color c1, Color c2, bool direction_right, size_t *status) {
-    lamps_clear_color(c2); // We want to start from a clean background
+    lamps_clear(c2); // We want to start from a clean background
     
     for (size_t i = 0; i <= *status; ++i) {
         if(direction_right) {
@@ -164,7 +163,7 @@ void KnightRider(bool direction_right, size_t *status) {
     size_t tail_length = 4;
     size_t tail_decrease = 60;      
     size_t i = *status;
-    lamps_clear_color(c2);
+    lamps_clear(c2);
     if(direction_right) {
         set_lamp_part(i, c1);
     }
@@ -178,6 +177,19 @@ void KnightRider(bool direction_right, size_t *status) {
         if (!direction_right && i + j <= num_lamp_parts) {
             set_lamp_part((num_lamp_parts - i) + j, software_dim(c1, 255 - i * tail_decrease ));
         }
+    }
+    ++*status;
+    if(*status >= num_lamp_parts) {
+        *status = 0;
+    }
+}
+
+void Flashing(Color c1, size_t count, size_t *status) {
+    if(*status % 2 == 0) {
+        lamps_clear(Color(0, 0, 0));
+    }
+    else {
+        lamps_clear(c1);
     }
     ++*status;
     if(*status >= num_lamp_parts) {
@@ -225,7 +237,41 @@ void SparkleRGB() {
 //********************************************************************//
 
 void loop() {
-    Serial.println(status);
+    for(size_t i = 0; i < waiting; i++) {
+        if (Serial.available() > 0) {
+            incomingChar = Serial.read();
+            Serial.print(incomingChar);
+            if(incomingChar == '\n') {
+                status = 0;
+                global_status = (size_t) incomingString.toInt();
+                incomingString = "";
+            }
+            else if (isDigit(incomingChar)) {
+                incomingString += incomingChar;
+            }
+            else if (incomingChar == 'l') {
+                if(locked == 0) {
+                    if(incomingString == "") {
+                        locked = 1;
+                    }
+                    else {
+                        locked = (size_t) incomingString.toInt();
+                    }
+                    locked_at = global_status;
+                    Serial.println("\nLocked!");
+                }
+                else {
+                    locked = 0;
+                    Serial.println("\nUnlocked!");
+                }
+            }
+            else if (incomingChar == '\b') {
+                incomingString = "";
+                Serial.println("Clear!");
+            }
+        }
+        delay(1);
+    }
 
     if(global_status == 0) {
         KnightRider(true, &status);
@@ -245,15 +291,24 @@ void loop() {
     else if(global_status == 5) {
         color_wheel_status = ColorWheelLoadingBar(color_wheel_status, false, &status);
     }
+    else if(global_status == 6) {
+        Flashing(Color(255, 255, 255), 10, &status);
+    }
 
    // This is what we always need
    if(status == 0) {
        ++global_status;
-       if(global_status > global_status_max) {
-           global_status = 0;
+       if(locked == 0) {
+           if(global_status > global_status_max) {
+               global_status = 0;
+           }
+       }
+       else {
+           if(global_status > locked_at + locked) {
+               global_status = locked_at;
+           }
        }
    }
    dmx.update();
-   delay(4000/num_lamp_parts);
 }
 
